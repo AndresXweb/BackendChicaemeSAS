@@ -3,6 +3,7 @@ package com.ChicaemeSAS.BackendSistema.service;
 import com.ChicaemeSAS.BackendSistema.model.Usuario;
 import com.ChicaemeSAS.BackendSistema.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,16 +13,20 @@ public class UsuariosService {
     @Autowired
     private UsuarioRepository repository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     public List<Usuario> findAll() {
         return repository.findAll();
     }
 
     public Usuario guardarUsuario(Usuario usuario) {
+        // Hasheamos la contraseña ANTES de guardar. Nunca se guarda en texto plano.
+        usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
         return repository.save(usuario);
     }
 
     public Usuario buscarUsuarioPorId(Long id) {
-        // Usamos orElse(null) en lugar de .get() para evitar errores si el ID no existe
         return repository.findById(id).orElse(null);
     }
 
@@ -45,24 +50,27 @@ public class UsuariosService {
             usuarioExistente.setCiudad(usuarioNuevo.getCiudad());
             usuarioExistente.setTelefono(usuarioNuevo.getTelefono());
             usuarioExistente.setEmail(usuarioNuevo.getEmail());
-            usuarioExistente.setPassword(usuarioNuevo.getPassword());
+
+            // Solo re-hasheamos si mandaron una contraseña nueva.
+            // Si el campo viene vacío/null, dejamos la contraseña actual sin tocar.
+            if (usuarioNuevo.getPassword() != null && !usuarioNuevo.getPassword().isBlank()) {
+                usuarioExistente.setPassword(passwordEncoder.encode(usuarioNuevo.getPassword()));
+            }
+
             usuarioExistente.setTipoUsuario(usuarioNuevo.getTipoUsuario());
             usuarioExistente.setImagen(usuarioNuevo.getImagen());
             return repository.save(usuarioExistente);
         }).orElse(null);
     }
 
-    // --- NUEVO MÉTODO PARA EL LOGIN ---
+    // --- LOGIN: ahora compara con BCrypt en vez de .equals() ---
     public Usuario autenticarUsuario(String email, String password) {
-        // Buscamos al usuario por correo
         Usuario usuario = buscarUsuarioPorEmail(email);
 
-        // Si el usuario existe y la contraseña coincide, retornamos el usuario
-        if (usuario != null && usuario.getPassword().equals(password)) {
+        if (usuario != null && passwordEncoder.matches(password, usuario.getPassword())) {
             return usuario;
         }
 
-        // Si no existe o la contraseña no coincide, retornamos null
         return null;
     }
 }

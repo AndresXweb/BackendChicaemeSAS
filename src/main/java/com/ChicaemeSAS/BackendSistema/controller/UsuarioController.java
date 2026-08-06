@@ -1,7 +1,10 @@
 package com.ChicaemeSAS.BackendSistema.controller;
 
 import com.ChicaemeSAS.BackendSistema.dto.LoginRequest;
+import com.ChicaemeSAS.BackendSistema.dto.LoginResponse;
+import com.ChicaemeSAS.BackendSistema.dto.UsuarioResponseDTO;
 import com.ChicaemeSAS.BackendSistema.model.Usuario;
+import com.ChicaemeSAS.BackendSistema.security.JwtUtil;
 import com.ChicaemeSAS.BackendSistema.service.UsuariosService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,28 +21,36 @@ public class UsuarioController {
     @Autowired
     private UsuariosService usuariosService;
 
-    // 1. OBTENER TODOS
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    // 1. OBTENER TODOS (sin password)
     @GetMapping
-    public List<Usuario> getUsuarios() {
-        return usuariosService.findAll();
+    public List<UsuarioResponseDTO> getUsuarios() {
+        return usuariosService.findAll().stream()
+                .map(UsuarioResponseDTO::fromUsuario)
+                .toList();
     }
 
-    // 2. CREAR
+    // 2. CREAR (registro)
     @PostMapping
-    public Usuario crearUsuario(@Valid @RequestBody Usuario creandoUsuario) {
-        return usuariosService.guardarUsuario(creandoUsuario);
+    public UsuarioResponseDTO crearUsuario(@Valid @RequestBody Usuario creandoUsuario) {
+        Usuario guardado = usuariosService.guardarUsuario(creandoUsuario);
+        return UsuarioResponseDTO.fromUsuario(guardado);
     }
 
-    // 3. OBTENER POR ID
+    // 3. OBTENER POR ID (sin password)
     @GetMapping("/{id}")
-    public Usuario getUsuarioById(@PathVariable Long id) {
-        return usuariosService.buscarUsuarioPorId(id);
+    public UsuarioResponseDTO getUsuarioById(@PathVariable Long id) {
+        Usuario usuario = usuariosService.buscarUsuarioPorId(id);
+        return usuario != null ? UsuarioResponseDTO.fromUsuario(usuario) : null;
     }
 
     // 4. ACTUALIZAR
     @PutMapping("/{id}")
-    public Usuario actualizarUsuario(@PathVariable Long id, @RequestBody Usuario actualizandoUsuario) {
-        return usuariosService.actualizarUsuario(id, actualizandoUsuario);
+    public UsuarioResponseDTO actualizarUsuario(@PathVariable Long id, @RequestBody Usuario actualizandoUsuario) {
+        Usuario actualizado = usuariosService.actualizarUsuario(id, actualizandoUsuario);
+        return actualizado != null ? UsuarioResponseDTO.fromUsuario(actualizado) : null;
     }
 
     // 5. ELIMINAR
@@ -48,7 +59,7 @@ public class UsuarioController {
         usuariosService.eliminarUsuarioPorId(id);
     }
 
-    // 6. LOGIN (Nuevo endpoint)
+    // 6. LOGIN: ahora devuelve token + datos SIN password
     @PostMapping("/login")
     public ResponseEntity<?> loginUsuario(@RequestBody LoginRequest loginRequest) {
         Usuario usuarioAutenticado = usuariosService.autenticarUsuario(
@@ -57,7 +68,9 @@ public class UsuarioController {
         );
 
         if (usuarioAutenticado != null) {
-            return ResponseEntity.ok(usuarioAutenticado);
+            String token = jwtUtil.generarToken(usuarioAutenticado.getEmail(), usuarioAutenticado.getTipoUsuario());
+            LoginResponse respuesta = new LoginResponse(token, UsuarioResponseDTO.fromUsuario(usuarioAutenticado));
+            return ResponseEntity.ok(respuesta);
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Correo o contraseña incorrectos");
         }
