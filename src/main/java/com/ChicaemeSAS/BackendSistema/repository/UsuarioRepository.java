@@ -10,4 +10,5 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     // Spring entiende que debe hacer: SELECT * FROM usuarios WHERE email = ?
     Optional<Usuario> findByEmail(String email);
     Optional<Usuario> findByTelefono(String telefono);
+    Optional<Usuario> findByResetToken(String resetToken);
 }

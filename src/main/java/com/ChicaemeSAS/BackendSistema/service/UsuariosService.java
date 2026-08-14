@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class UsuariosService {
@@ -72,5 +74,38 @@ public class UsuariosService {
         }
 
         return null;
+    }
+
+    // --- RECUPERACIÓN DE CONTRASEÑA ---
+
+    // Devuelve el token generado, o null si el correo no existe.
+    // El controller decide qué responder al frontend (siempre el mismo mensaje, exista o no el correo).
+    public String generarTokenRecuperacion(String email) {
+        Usuario usuario = buscarUsuarioPorEmail(email);
+        if (usuario == null) {
+            return null;
+        }
+
+        String token = UUID.randomUUID().toString();
+        usuario.setResetToken(token);
+        usuario.setResetTokenExpira(LocalDateTime.now().plusMinutes(30));
+        repository.save(usuario);
+        return token;
+    }
+
+    // Devuelve true si el token era válido y la contraseña quedó actualizada.
+    public boolean restablecerPassword(String token, String nuevaPassword) {
+        Usuario usuario = repository.findByResetToken(token).orElse(null);
+
+        if (usuario == null || usuario.getResetTokenExpira() == null
+                || usuario.getResetTokenExpira().isBefore(LocalDateTime.now())) {
+            return false; // token inexistente, ya usado, o expirado
+        }
+
+        usuario.setPassword(passwordEncoder.encode(nuevaPassword));
+        usuario.setResetToken(null);
+        usuario.setResetTokenExpira(null);
+        repository.save(usuario);
+        return true;
     }
 }

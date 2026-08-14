@@ -14,6 +14,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -35,9 +40,27 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
+    // CORS registrado DENTRO de Spring Security (no solo en CorsConfig.java aparte).
+    // Así, hasta las respuestas de rechazo (401/403) llevan el header Access-Control-Allow-Origin,
+    // y el navegador puede mostrar el error real en vez de reportarlo como "bloqueado por CORS".
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:5173")); // URL real del frontend en desarrollo
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", configuration);
+        return source;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // Enganchamos el bean de arriba directamente en Spring Security
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
                 // Desactivamos CSRF: es protección de navegador con cookies/sesión,
                 // acá usamos JWT sin estado (stateless), no aplica.
                 .csrf(csrf -> csrf.disable())
@@ -46,8 +69,13 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
+                        // ---------- PREFLIGHT DE CORS: siempre libre, o el navegador bloquea todo ----------
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         // ---------- RUTAS PÚBLICAS (sin login) ----------
                         .requestMatchers(HttpMethod.POST, "/api/usuarios/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/usuarios/forgot-password").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/usuarios/reset-password").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()      // registro
                         .requestMatchers(HttpMethod.POST, "/api/contactos").permitAll()     // formulario de contacto
                         .requestMatchers(HttpMethod.GET, "/api/articulos/**").permitAll()   // catálogo público

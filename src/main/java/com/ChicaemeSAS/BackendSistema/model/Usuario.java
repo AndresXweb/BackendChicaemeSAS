@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
@@ -49,5 +50,20 @@ public class Usuario {
 
     @Column(name = "imagen", length = 500) // Le damos 500 de longitud por si la URL es muy larga
     private String imagen;
+
+    // --- Recuperación de contraseña ---
+    @Column(name = "reset_token", length = 255)
+    private String resetToken;
+
+    @Column(name = "reset_token_expira")
+    private LocalDateTime resetTokenExpira;
+
+    // --- Términos y condiciones ---
+    // columnDefinition con DEFAULT 0 para que la migración no falle sobre usuarios ya existentes
+    @Column(name = "acepto_terminos", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
+    private boolean aceptoTerminos;
+
+    @Column(name = "fecha_aceptacion_terminos")
+    private LocalDateTime fechaAceptacionTerminos;
 
 }
