@@ -52,7 +52,7 @@ public class UsuarioController {
         if (!esAdmin) {
             // Registro público: exige haber aceptado términos, e ignora cualquier
             // tipoUsuario que venga en el body (evita que alguien se auto-asigne admin).
-            if (!creandoUsuario.isAceptoTerminos()) {
+            if (!Boolean.TRUE.equals(creandoUsuario.getAceptoTerminos())) {
                 return ResponseEntity.badRequest().body("Debes aceptar los términos y condiciones para registrarte.");
             }
             creandoUsuario.setTipoUsuario("Cliente");

@@ -23,8 +23,15 @@ public class UsuariosService {
     }
 
     public Usuario guardarUsuario(Usuario usuario) {
-        // Hasheamos la contraseña ANTES de guardar. Nunca se guarda en texto plano.
         usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
+
+        // Con el campo como Boolean (wrapper) ya puede llegar null sin romper el
+        // JSON, pero la columna en la BD sigue siendo NOT NULL — así que si llega
+        // vacío (ej: el panel admin no manda este campo), lo dejamos en false.
+        if (usuario.getAceptoTerminos() == null) {
+            usuario.setAceptoTerminos(false);
+        }
+
         return repository.save(usuario);
     }
 

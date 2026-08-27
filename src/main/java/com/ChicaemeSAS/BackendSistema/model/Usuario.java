@@ -61,7 +61,7 @@ public class Usuario {
     // --- Términos y condiciones ---
     // columnDefinition con DEFAULT 0 para que la migración no falle sobre usuarios ya existentes
     @Column(name = "acepto_terminos", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
-    private boolean aceptoTerminos;
+    private Boolean aceptoTerminos;
 
     @Column(name = "fecha_aceptacion_terminos")
     private LocalDateTime fechaAceptacionTerminos;
