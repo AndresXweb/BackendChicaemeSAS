@@ -129,4 +129,43 @@ public class UsuariosService {
         repository.save(usuario);
         return true;
     }
+
+    // --- REGISTRO PÚBLICO ---
+    // Regla de negocio compartida entre el formulario de registro normal y el
+    // login/registro con Google: fuerza tipoUsuario = Cliente (nadie se auto-asigna
+    // admin por ninguna de las dos puertas) y deja constancia de cuándo aceptó términos.
+    // Antes esta regla vivía solo dentro de UsuarioController.crearUsuario(); se movió
+    // aquí para que Google Sign-In no tenga que duplicarla.
+    public Usuario registrarUsuarioPublico(Usuario nuevoUsuario, boolean aceptoTerminos) {
+        if (!aceptoTerminos) {
+            throw new IllegalArgumentException("Debes aceptar los términos y condiciones para registrarte.");
+        }
+        nuevoUsuario.setTipoUsuario("Cliente");
+        nuevoUsuario.setAceptoTerminos(true);
+        nuevoUsuario.setFechaAceptacionTerminos(LocalDateTime.now());
+        return guardarUsuario(nuevoUsuario);
+    }
+
+    // --- LOGIN / REGISTRO CON GOOGLE ---
+    // Si el correo ya existe en la BD (con cualquier rol: Cliente, Admin, Staff...),
+    // simplemente logueamos esa cuenta — no se crea una segunda cuenta duplicada,
+    // y el rol existente no se toca ni se pisa.
+    // Si no existe, se crea una cuenta nueva forzada a Cliente (misma regla que el
+    // registro manual), con una contraseña aleatoria: nadie la necesita para entrar
+    // por Google, solo existe porque la columna password es NOT NULL. Si esa persona
+    // más adelante quiere entrar también con correo+contraseña, usa "olvidé mi contraseña".
+    public Usuario autenticarOCrearConGoogle(String email, String nombres, String apellidos, boolean aceptoTerminos) {
+        Usuario existente = buscarUsuarioPorEmail(email);
+        if (existente != null) {
+            return existente;
+        }
+
+        Usuario nuevo = new Usuario();
+        nuevo.setEmail(email);
+        nuevo.setNombres(nombres != null ? nombres : "");
+        nuevo.setApellidos(apellidos != null ? apellidos : "");
+        nuevo.setPassword(UUID.randomUUID().toString()); // se re-hashea dentro de guardarUsuario()
+
+        return registrarUsuarioPublico(nuevo, aceptoTerminos);
+    }
 }

@@ -74,6 +74,7 @@ public class SecurityConfig {
 
                         // ---------- RUTAS PÚBLICAS (sin login) ----------
                         .requestMatchers(HttpMethod.POST, "/api/usuarios/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/usuarios/google-login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/usuarios/forgot-password").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/usuarios/reset-password").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()      // registro

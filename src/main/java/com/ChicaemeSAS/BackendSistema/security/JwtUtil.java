@@ -13,12 +13,13 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    // TODO: mover esto a application.properties como "jwt.secret" (variable de entorno en produccion).
-    // Debe tener al menos 32 caracteres para HS256. Este es solo un valor por defecto para arrancar.
-    @Value("${jwt.secret:ChicaemeSAS_Clave_Secreta_Super_Larga_Para_Firmar_Tokens_JWT_2026}")
+    // Sin valor por defecto: si falta la variable de entorno JWT_SECRET, la app
+    // debe fallar al arrancar en vez de firmar tokens con una clave conocida/pública.
+    // Debe tener al menos 32 caracteres para HS256.
+    @Value("${jwt.secret}")
     private String secretKeyString;
 
-    // 24 horas por defecto (en milisegundos). Tambien configurable via application.properties -> jwt.expiration
+    // 24 horas por defecto (en milisegundos). Configurable via application.properties -> jwt.expiration
     @Value("${jwt.expiration:86400000}")
     private long expirationMs;
 
