@@ -60,7 +60,12 @@ public class UsuarioController {
         }
         // Si es admin autenticado, se respeta el tipoUsuario que mandó el formulario del panel.
 
-        Usuario guardado = usuariosService.guardarUsuario(creandoUsuario);
+        Usuario guardado;
+        try {
+            guardado = usuariosService.guardarUsuario(creandoUsuario);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(UsuarioResponseDTO.fromUsuario(guardado));
     }
 
@@ -73,9 +78,15 @@ public class UsuarioController {
 
     // 4. ACTUALIZAR
     @PutMapping("/{id}")
-    public UsuarioResponseDTO actualizarUsuario(@PathVariable Long id, @RequestBody Usuario actualizandoUsuario) {
-        Usuario actualizado = usuariosService.actualizarUsuario(id, actualizandoUsuario);
-        return actualizado != null ? UsuarioResponseDTO.fromUsuario(actualizado) : null;
+    public ResponseEntity<?> actualizarUsuario(@PathVariable Long id, @RequestBody Usuario actualizandoUsuario) {
+        try {
+            Usuario actualizado = usuariosService.actualizarUsuario(id, actualizandoUsuario);
+            return actualizado != null
+                    ? ResponseEntity.ok(UsuarioResponseDTO.fromUsuario(actualizado))
+                    : ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     // 5. ELIMINAR
@@ -122,7 +133,12 @@ public class UsuarioController {
         String token = body.get("token");
         String nuevaPassword = body.get("password");
 
-        boolean exito = usuariosService.restablecerPassword(token, nuevaPassword);
+        boolean exito;
+        try {
+            exito = usuariosService.restablecerPassword(token, nuevaPassword);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
 
         if (exito) {
             return ResponseEntity.ok("Contraseña actualizada correctamente.");

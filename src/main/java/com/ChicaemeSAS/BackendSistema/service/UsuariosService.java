@@ -12,17 +12,29 @@ import java.util.UUID;
 
 @Service
 public class UsuariosService {
+
+    private static final int PASSWORD_MIN_LENGTH = 8;
+
     @Autowired
     private UsuarioRepository repository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    // Validación puntual (no en el modelo): así no afecta las actualizaciones
+    // que mandan password vacío a propósito para "no cambiarla".
+    private void validarLongitudPassword(String password) {
+        if (password == null || password.length() < PASSWORD_MIN_LENGTH) {
+            throw new IllegalArgumentException("La contraseña debe tener al menos " + PASSWORD_MIN_LENGTH + " caracteres.");
+        }
+    }
+
     public List<Usuario> findAll() {
         return repository.findAll();
     }
 
     public Usuario guardarUsuario(Usuario usuario) {
+        validarLongitudPassword(usuario.getPassword());
         usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
 
         // Con el campo como Boolean (wrapper) ya puede llegar null sin romper el
@@ -63,6 +75,7 @@ public class UsuariosService {
             // Solo re-hasheamos si mandaron una contraseña nueva.
             // Si el campo viene vacío/null, dejamos la contraseña actual sin tocar.
             if (usuarioNuevo.getPassword() != null && !usuarioNuevo.getPassword().isBlank()) {
+                validarLongitudPassword(usuarioNuevo.getPassword());
                 usuarioExistente.setPassword(passwordEncoder.encode(usuarioNuevo.getPassword()));
             }
 
@@ -109,6 +122,7 @@ public class UsuariosService {
             return false; // token inexistente, ya usado, o expirado
         }
 
+        validarLongitudPassword(nuevaPassword);
         usuario.setPassword(passwordEncoder.encode(nuevaPassword));
         usuario.setResetToken(null);
         usuario.setResetTokenExpira(null);
