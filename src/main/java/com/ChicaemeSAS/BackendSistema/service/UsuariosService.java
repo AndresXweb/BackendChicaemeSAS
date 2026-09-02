@@ -37,11 +37,17 @@ public class UsuariosService {
         validarLongitudPassword(usuario.getPassword());
         usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
 
-        // Con el campo como Boolean (wrapper) ya puede llegar null sin romper el
-        // JSON, pero la columna en la BD sigue siendo NOT NULL — así que si llega
-        // vacío (ej: el panel admin no manda este campo), lo dejamos en false.
         if (usuario.getAceptoTerminos() == null) {
             usuario.setAceptoTerminos(false);
+        }
+
+        // Mismo caso, mismo motivo: tipoUsuario es NOT NULL en la BD. Puede llegar
+        // vacío si esta llamada terminó viniendo del registro público sin pasar por
+        // registrarUsuarioPublico (ej: un token de admin viejo seguía en localStorage
+        // del navegador y el controller creyó que quien registraba era un admin).
+        // El registro público nunca manda tipoUsuario, así que por defecto es Cliente.
+        if (usuario.getTipoUsuario() == null || usuario.getTipoUsuario().isBlank()) {
+            usuario.setTipoUsuario("Cliente");
         }
 
         return repository.save(usuario);
@@ -164,7 +170,12 @@ public class UsuariosService {
         nuevo.setEmail(email);
         nuevo.setNombres(nombres != null ? nombres : "");
         nuevo.setApellidos(apellidos != null ? apellidos : "");
-        nuevo.setPassword(UUID.randomUUID().toString()); // se re-hashea dentro de guardarUsuario()
+        nuevo.setPassword(UUID.randomUUID().toString());
+
+        // Defaults para columnas NOT NULL que Google no provee
+        nuevo.setDireccion("");
+        nuevo.setCiudad("");
+        nuevo.setTelefono("");
 
         return registrarUsuarioPublico(nuevo, aceptoTerminos);
     }

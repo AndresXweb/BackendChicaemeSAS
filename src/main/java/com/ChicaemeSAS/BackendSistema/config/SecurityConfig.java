@@ -82,6 +82,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/articulos/**").permitAll()   // catálogo público
                         .requestMatchers(HttpMethod.GET, "/api/servicios/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categorias/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()          // ver las fotos ya subidas
+                        .requestMatchers(HttpMethod.POST, "/api/archivos/imagen").permitAll() // subir una foto (el registro pasa antes de tener token)
 
                         // ---------- RUTAS SOLO PARA ADMIN ----------
                         .requestMatchers("/api/empleados/**").hasRole("ADMIN")
