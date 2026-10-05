@@ -28,8 +28,8 @@ public class ArchivoController {
     @Value("${app.upload.dir}")
     private String uploadDir;
 
-    @Value("${server.port:8080}")
-    private String puerto;
+    @Value("${app.backend.url:http://localhost:8080}")
+    private String backendUrl;
 
     private static final List<String> TIPOS_PERMITIDOS = List.of("image/jpeg", "image/png", "image/webp");
 
@@ -59,7 +59,8 @@ public class ArchivoController {
             Path destino = Path.of(uploadDir, nombreArchivo);
             Files.copy(archivo.getInputStream(), destino);
 
-            String url = "http://localhost:" + puerto + "/uploads/" + nombreArchivo;
+            // Usa la URL pública del backend (Railway o localhost)
+            String url = backendUrl.replaceAll("/$", "") + "/uploads/" + nombreArchivo;
             return ResponseEntity.ok(Map.of("url", url));
 
         } catch (IOException e) {
