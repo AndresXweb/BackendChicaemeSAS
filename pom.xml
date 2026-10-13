@@ -124,8 +124,15 @@
     </dependencies>
 
     <build>
+        <!-- ESTO ES LO IMPORTANTE: desactiva el filtrado -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+            </resource>
+        </resources>
+
         <plugins>
-            <!-- Plugin para evitar el error de encoding -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
